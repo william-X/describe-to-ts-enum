@@ -9,7 +9,7 @@ interface IEnumType {
   /** 枚举的中文描述 */
   chinese: string;
   /** 枚举的值 */
-  value: number;
+  value: number | string;
   /** 枚举的变量名 */
   variableName: string;
 }
@@ -55,12 +55,20 @@ export async function getEnumByDescAndVarFunc({ desc, varFunc }: { desc: string,
   return undefined
 }
 
-export function enumTSFormat(enumArr: IEnumType[]) {
-  const enumStr = enumArr.map((item) => `/** ${item.chinese} */\n${item.variableName} = ${item.value}`).join(',\n')
+/** 枚举值按number或者string返回代码文件的格式字符串 */
+function getEnumValueToCodeString(enumObj: IEnumType) {
+  if (typeof enumObj.value === 'string') {
+    return `"${enumObj.value}"`;
+  }
+  return `${enumObj.value}`;
+}
+
+export function enumTSFormat({ enumArr, enumName }: { enumArr: IEnumType[], enumName: string }) {
+  const enumStr = enumArr.map((item) => `/** ${item.chinese} */\n${item.variableName} = ${getEnumValueToCodeString(item)}`).join(',\n')
   return `
-    export enum Enum {
+    export enum ${enumName} {
       ${enumStr}
-    } 
-  `
+    }
+  `;
 }
 
