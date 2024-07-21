@@ -5,11 +5,20 @@ export function isChinese(str: string) {
   return /^[\u4e00-\u9fff]+$/.test(str);
 }
 
-interface IEnumType {
+export interface IEnumType {
   /** 枚举的中文描述 */
   chinese: string;
   /** 枚举的值 */
   value: number | string;
+  /** 枚举的变量名 */
+  variableName: string;
+}
+
+export interface IEnumVariable {
+  /** 枚举的中文描述 */
+  chinese: string;
+  /** 枚举的值 */
+  value: IEnumType[];
   /** 枚举的变量名 */
   variableName: string;
 }
@@ -26,8 +35,15 @@ function getNumberInString(str: string): number[] {
   return result;
 }
 
+export function defaultChangeVariable({ variableName }: { variableName: string }) {
+  // 替换掉字符串里的空格
+  // TODO: 简单处理去空格，这里需要加变量名合法校验比较好
+  const varName = variableName.replace(/\s+/g, '');
+  return wordsChange({ words: varName, type: IWordsChangeType.AllInitialUpper })
+}
+
 /** 根据说明获取枚举 */
-export async function getEnumByDescAndVarFunc({ desc, varFunc }: { desc: string, varFunc: (desc: string) => Promise<string> }) {
+export async function getEnumByDescAndVarFunc({ desc, varFunc, defaultChange = true }: { desc: string, varFunc: (desc: string) => Promise<string>, defaultChange?: boolean }) {
   // 先找到各个数字的位，记录下来
   const res = getNumberInString(desc)
   if (res.length > 1) {
@@ -45,7 +61,7 @@ export async function getEnumByDescAndVarFunc({ desc, varFunc }: { desc: string,
           descArr.push({
             chinese: subStr,
             value: Number(desc.substring(res[i], res[i] + 1)),
-            variableName: wordsChange({ words: variableName, type: IWordsChangeType.AllInitialUpper }),
+            variableName: defaultChange ? defaultChangeVariable({ variableName }) : variableName,
           })
         }
       }
@@ -63,10 +79,11 @@ function getEnumValueToCodeString(enumObj: IEnumType) {
   return `${enumObj.value}`;
 }
 
-export function enumTSFormat({ enumArr, enumName }: { enumArr: IEnumType[], enumName: string }) {
-  const enumStr = enumArr.map((item) => `/** ${item.chinese} */\n${item.variableName} = ${getEnumValueToCodeString(item)}`).join(',\n')
+export function enumTSFormat({ enumVar }: { enumVar: IEnumVariable }) {
+  const enumStr = enumVar.value.map((item) => `/** ${item.chinese} */\n${item.variableName} = ${getEnumValueToCodeString(item)}`).join(',\n')
   return `
-    export enum ${enumName} {
+    /** ${enumVar.chinese} */
+    export enum ${enumVar.variableName} {
       ${enumStr}
     }
   `;

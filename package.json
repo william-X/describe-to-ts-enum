@@ -1,6 +1,6 @@
 {
   "name": "describe-to-ts-enum",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "中文描述转ts",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
